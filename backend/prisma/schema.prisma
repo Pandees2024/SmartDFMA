@@ -1,0 +1,273 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique @db.VarChar(100)
+  name          String   @db.VarChar(200)
+  email         String?  @unique @db.VarChar(200)
+  password_hash String   @db.VarChar(255)
+  role          String   @default("user") @db.VarChar(50)
+  team_id       Int?
+  is_leader     Boolean  @default(false)
+  landing_page  String?  @db.VarChar(200)
+  status        Boolean  @default(true)
+  refresh_token String?  @db.Text
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  team Team? @relation(fields: [team_id], references: [id])
+
+  @@map("users")
+}
+
+model Country {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(200)
+  code          String?  @db.VarChar(50)
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  @@map("countries")
+}
+
+model Unit {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(200)
+  code          String?  @db.VarChar(100)
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  modules Module[]
+
+  @@map("units")
+}
+
+model Project {
+  id                 Int      @id @default(autoincrement())
+  name               String   @db.VarChar(300)
+  code               String?  @db.VarChar(100)
+  client_name        String?  @db.VarChar(300)
+  location           String?  @db.VarChar(500)
+  start_date         DateTime?
+  end_date           DateTime?
+  model_reference    String?  @db.VarChar(500)
+  model_ref_location String?  @db.VarChar(500)
+  status             Boolean  @default(true)
+  created_by_id      Int?
+  updated_by_id      Int?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  deleted_at         DateTime?
+
+  ppvcTransactions PPVCTransaction[]
+
+  @@map("projects")
+}
+
+model Activity {
+  id                   Int      @id @default(autoincrement())
+  name                 String   @db.VarChar(300)
+  code                 String?  @db.VarChar(100)
+  sub_activity_name    String?  @db.VarChar(300)
+  sub_sub_activity_name String? @db.VarChar(300)
+  parent_activity_id   Int?
+  status               Boolean  @default(true)
+  created_by_id        Int?
+  updated_by_id        Int?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  deleted_at           DateTime?
+
+  parent_activity  Activity?  @relation("ActivityToSubActivity", fields: [parent_activity_id], references: [id])
+  sub_activities   Activity[] @relation("ActivityToSubActivity")
+
+  ppvcTransactions         PPVCTransaction[] @relation("ActivityRelation")
+  ppvcSubActivityTransactions PPVCTransaction[] @relation("SubActivityRelation")
+
+  @@map("activities")
+}
+
+model Team {
+  id            Int      @id @default(autoincrement())
+  name          String?  @db.VarChar(200)
+  code          String?  @db.VarChar(100)
+  activity      String?  @db.VarChar(200)
+  remarks       String?  @db.Text
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  users            User[]
+  ppvcTransactions PPVCTransaction[]
+
+  @@map("teams")
+}
+
+model Material {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(200)
+  code          String?  @db.VarChar(100)
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  components Component[]
+
+  @@map("materials")
+}
+
+model Module {
+  id                Int      @id @default(autoincrement())
+  name              String   @db.VarChar(300)
+  code              String?  @db.VarChar(100)
+  short_description String?  @db.VarChar(500)
+  description       String?  @db.Text
+  module_type       String?  @db.VarChar(100)
+  unit_id           Int?
+  status            Boolean  @default(true)
+  created_by_id     Int?
+  updated_by_id     Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  deleted_at        DateTime?
+
+  unit             Unit?            @relation(fields: [unit_id], references: [id])
+  components       Component[]
+  ppvcTransactions PPVCTransaction[]
+
+  @@map("modules")
+}
+
+model Component {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(300)
+  code          String?  @db.VarChar(100)
+  module_id     Int?
+  material_id   Int?
+  rfid          String?  @db.VarChar(200)
+  dimension     String?  @db.VarChar(200)
+  remarks       String?  @db.Text
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  module           Module?          @relation(fields: [module_id], references: [id])
+  material         Material?        @relation(fields: [material_id], references: [id])
+  ppvcTransactions PPVCTransaction[]
+
+  @@map("components")
+}
+
+model Block {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(200)
+  code          String?  @db.VarChar(100)
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  @@map("blocks")
+}
+
+model CheckList {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(300)
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  @@map("checklists")
+}
+
+// Core PPVC transaction model - central to all workflows
+// level_id: 1=ActivityHeader, 2=ComponentRow, 3=SubActivityDetail
+// planning_module_status: 1=Planned, 2=InProgress, 3=PreCastComplete, 4=QCPassed, 5=ReadyForDelivery, 6=Delivered, 7=Installed, 8=NextUnlocked
+model PPVCTransaction {
+  id                     Int       @id @default(autoincrement())
+  project_id             Int?
+  module_id              Int?
+  activity_id            Int?
+  sub_activity_id        Int?
+  component_id           Int?
+  man_days               Float?
+  team_id                Int?
+  start_date             DateTime?
+  end_date               DateTime?
+  dependency             Int?
+  lead_time              Int?
+  complete_percent       String?   @default("0") @db.VarChar(10)
+  planning_module_status Int?      @default(0)
+  actual_start_date      DateTime?
+  actual_end_date        DateTime?
+  remarks                String?   @db.Text
+  level_id               Int?      @default(1)
+  unit_level_no          String?   @db.VarChar(100)
+
+  // QC fields
+  expected_result String? @db.Text
+  actual_result   String? @db.Text
+  defect_remarks  String? @db.Text
+  reassign_to     Int?
+
+  // Delivery fields
+  target_location String? @db.VarChar(500)
+  vehicle_no      String? @db.VarChar(100)
+  rfid_tag        String? @db.VarChar(200)
+
+  status        Boolean  @default(true)
+  created_by_id Int?
+  updated_by_id Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+
+  project      Project?   @relation(fields: [project_id], references: [id])
+  module       Module?    @relation(fields: [module_id], references: [id])
+  activity     Activity?  @relation("ActivityRelation", fields: [activity_id], references: [id])
+  sub_activity Activity?  @relation("SubActivityRelation", fields: [sub_activity_id], references: [id])
+  component    Component? @relation(fields: [component_id], references: [id])
+  team         Team?      @relation(fields: [team_id], references: [id])
+
+  @@index([project_id])
+  @@index([module_id])
+  @@index([activity_id])
+  @@index([level_id])
+  @@index([planning_module_status])
+  @@map("ppvc_transactions")
+}
